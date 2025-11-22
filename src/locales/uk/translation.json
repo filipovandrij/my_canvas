@@ -15,7 +15,14 @@
   "tab_pixelEraser": "Піксель-ластик",
   "tab_photoCollage": "Колаж з фото",
   "collageHint": "Зберіть кілька фото в колаж",
-  "collagePlaceholder": "Колаж з фото — скоро"
+  "collagePlaceholder": "Колаж з фото — скоро",
+  "preset": "Пресет",
+  "preset_youtube": "YouTube превʼю 1280×720",
+  "width": "Ширина",
+  "height": "Висота",
+  "setAsBackground": "Зробити фоном вибране",
+  "clearBackground": "Прибрати фон",
+  "downloadCollage": "Завантажити колаж"
 }
 
 

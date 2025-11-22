@@ -15,7 +15,14 @@
   "tab_pixelEraser": "პიქსელური საშლელი",
   "tab_photoCollage": "ფოტო კოლაჟი",
   "collageHint": "რამდენიმე ფოტოს კოლაჟად შეკრება",
-  "collagePlaceholder": "ფოტო კოლაჟი — მალე"
+  "collagePlaceholder": "ფოტო კოლაჟი — მალე",
+  "preset": "პრესეტი",
+  "preset_youtube": "YouTube თამბნეილი 1280×720",
+  "width": "სიგანე",
+  "height": "სიმაღლე",
+  "setAsBackground": "მონიშნულის ფონისად დაყენება",
+  "clearBackground": "ფონის მოხსნა",
+  "downloadCollage": "კოლაჟის ჩამოტვირთვა"
 }
 
 

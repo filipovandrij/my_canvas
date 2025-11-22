@@ -15,7 +15,14 @@
   "tab_pixelEraser": "Pixel Eraser",
   "tab_photoCollage": "Photo Collage",
   "collageHint": "Assemble multiple photos into a collage",
-  "collagePlaceholder": "Photo Collage — coming soon"
+  "collagePlaceholder": "Photo Collage — coming soon",
+  "preset": "Preset",
+  "preset_youtube": "YouTube Thumbnail 1280×720",
+  "width": "Width",
+  "height": "Height",
+  "setAsBackground": "Set selected as background",
+  "clearBackground": "Clear background",
+  "downloadCollage": "Download collage"
 }
 
 
