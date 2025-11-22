@@ -11,6 +11,12 @@ function Toolbar(props) {
     onUpload,
     onDownload,
     hasImage,
+    onUndo,
+    onRedo,
+    canUndo,
+    canRedo,
+    showOriginal,
+    onToggleShowOriginal,
   } = props
 
   const { t, i18n } = useTranslation()
@@ -28,6 +34,39 @@ function Toolbar(props) {
           <option value="uk">Українська</option>
           <option value="ka">ქართული</option>
         </select>
+      </div>
+
+      <div className="control">
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={Boolean(showOriginal)}
+            onChange={onToggleShowOriginal}
+            disabled={!hasImage}
+          />
+          <span>{t('showOriginal')}</span>
+        </label>
+      </div>
+
+      <div className="control">
+        <button
+          className="btn"
+          onClick={onUndo}
+          disabled={!canUndo}
+          aria-label={t('undo')}
+          title={t('undo')}
+        >
+          ←
+        </button>
+        <button
+          className="btn"
+          onClick={onRedo}
+          disabled={!canRedo}
+          aria-label={t('redo')}
+          title={t('redo')}
+        >
+          →
+        </button>
       </div>
 
       <label className="btn">

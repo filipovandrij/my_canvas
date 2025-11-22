@@ -8,7 +8,10 @@
   "shape_square": "Square",
   "shape_triangle": "Triangle",
   "emptyHint": "Upload an image to start editing",
-  "language": "Language"
+  "language": "Language",
+  "undo": "Undo",
+  "redo": "Redo",
+  "showOriginal": "Show original"
 }
 
 

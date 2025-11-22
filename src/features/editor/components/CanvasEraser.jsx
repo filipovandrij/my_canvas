@@ -3,7 +3,7 @@ import { drawImageContain, loadImage } from '../lib/images.js'
 import { stampShape, stampLine, strokeShapeOutline } from '../lib/brushes.js'
 
 const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
-  const { imageSrc, brushSize, brushShape, zoom = 1, onZoomChange } = props
+  const { imageSrc, brushSize, brushShape, zoom = 1, onZoomChange, onHistoryChange, showOriginal } = props
   const wrapperRef = useRef(null)
   const canvasRef = useRef(null)
   const overlayRef = useRef(null)
@@ -17,6 +17,35 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
   const isPanningRef = useRef(false)
   const panStartRef = useRef({ x: 0, y: 0 })
   const panAtStartRef = useRef({ x: 0, y: 0 })
+  const undoStackRef = useRef([])
+  const redoStackRef = useRef([])
+  const MAX_STACK = 30
+
+  function notifyHistory() {
+    onHistoryChange?.({
+      canUndo: undoStackRef.current.length > 0,
+      canRedo: redoStackRef.current.length > 0,
+    })
+  }
+
+  function snapshotCanvas() {
+    const canvas = canvasRef.current
+    const ctx = ctxRef.current
+    if (!canvas || !ctx) return null
+    try {
+      return ctx.getImageData(0, 0, canvas.width, canvas.height)
+    } catch {
+      return null
+    }
+  }
+
+  function restoreImageData(imageData) {
+    const ctx = ctxRef.current
+    if (!ctx || !imageData) return
+    ctx.putImageData(imageData, 0, 0)
+    clearOverlay()
+    hasDrawnImageRef.current = true
+  }
 
   // Overlay helpers defined early to satisfy no-use-before-define
   function clearOverlay() {
@@ -27,6 +56,7 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
   }
 
   function drawPreview(x, y) {
+    if (showOriginal) return
     const octx = overlayCtxRef.current
     const overlay = overlayRef.current
     if (!octx || !overlay) return
@@ -116,6 +146,10 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
       clearOverlay()
       // reset pan on new image
       setPan({ x: 0, y: 0 })
+      // reset history on new image
+      undoStackRef.current = []
+      redoStackRef.current = []
+      notifyHistory()
     }
     run()
     return () => {
@@ -145,6 +179,7 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
 
 
   function beginErase(e) {
+    if (showOriginal) return
     if (!imageRef.current) return
     e.preventDefault()
     // ignore right/middle click for erase
@@ -155,6 +190,15 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
     const pos = getOffsetPos(e)
     isErasingRef.current = true
     lastPointRef.current = pos
+    // snapshot before mutating for undo
+    const snap = snapshotCanvas()
+    if (snap) {
+      undoStackRef.current.push(snap)
+      if (undoStackRef.current.length > MAX_STACK) undoStackRef.current.shift()
+      // new action invalidates redo
+      redoStackRef.current = []
+      notifyHistory()
+    }
     ctx.save()
     ctx.globalCompositeOperation = 'destination-out'
     stampShape(ctx, pos.x, pos.y, brushSize, brushShape)
@@ -163,6 +207,7 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
   }
 
   function moveErase(e) {
+    if (showOriginal) return
     e.preventDefault()
     const pos = getOffsetPos(e)
     drawPreview(pos.x, pos.y)
@@ -188,6 +233,28 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
       if (!canvas) return null
       return canvas.toDataURL('image/png')
     },
+    undo() {
+      if (undoStackRef.current.length === 0) return
+      const current = snapshotCanvas()
+      const prev = undoStackRef.current.pop()
+      if (current) {
+        redoStackRef.current.push(current)
+        if (redoStackRef.current.length > MAX_STACK) redoStackRef.current.shift()
+      }
+      restoreImageData(prev)
+      notifyHistory()
+    },
+    redo() {
+      if (redoStackRef.current.length === 0) return
+      const current = snapshotCanvas()
+      const next = redoStackRef.current.pop()
+      if (current) {
+        undoStackRef.current.push(current)
+        if (undoStackRef.current.length > MAX_STACK) undoStackRef.current.shift()
+      }
+      restoreImageData(next)
+      notifyHistory()
+    },
   }))
 
   // Wheel zoom with passive: false to prevent browser/page zoom/scroll
@@ -206,6 +273,54 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
       el.removeEventListener('wheel', onWheel)
     }
   }, [zoom, onZoomChange])
+
+  // Keyboard shortcuts: Ctrl+Z (undo), Ctrl+Shift+Z / Ctrl+Y (redo)
+  useEffect(() => {
+    const handler = (e) => {
+      const isCtrl = e.ctrlKey || e.metaKey
+      if (!isCtrl) return
+      if (showOriginal) return
+      if (e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        if (undoStackRef.current.length) {
+          const current = snapshotCanvas()
+          const prev = undoStackRef.current.pop()
+          if (current) redoStackRef.current.push(current)
+          restoreImageData(prev)
+          notifyHistory()
+        }
+      } else if ((e.key.toLowerCase() === 'z' && e.shiftKey) || e.key.toLowerCase() === 'y') {
+        e.preventDefault()
+        if (redoStackRef.current.length) {
+          const current = snapshotCanvas()
+          const next = redoStackRef.current.pop()
+          if (current) undoStackRef.current.push(current)
+          restoreImageData(next)
+          notifyHistory()
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [showOriginal])
+
+  // Draw or clear original image on overlay when toggled
+  useEffect(() => {
+    const overlay = overlayRef.current
+    const octx = overlayCtxRef.current
+    if (!overlay || !octx) return
+    octx.clearRect(0, 0, overlay.width, overlay.height)
+    if (showOriginal && imageRef.current) {
+      // Draw original image to overlay to fully cover edits
+      // Ensure canvas sizes are in sync
+      const canvas = canvasRef.current
+      if (canvas) {
+        overlay.width = canvas.width
+        overlay.height = canvas.height
+      }
+      drawImageContain(octx, imageRef.current, overlay)
+    }
+  }, [showOriginal, imageSrc])
 
   function beginPan(e) {
     if (!imageRef.current) return

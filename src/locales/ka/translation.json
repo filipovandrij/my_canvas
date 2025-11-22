@@ -8,7 +8,10 @@
   "shape_square": "კვადრატი",
   "shape_triangle": "სამკუთხედი",
   "emptyHint": "რედაქტირებისთვის ატვირთეთ სურათი",
-  "language": "ენა"
+  "language": "ენა",
+  "undo": "გაუქმება",
+  "redo": "გამეორება",
+  "showOriginal": "აჩვენე ორიგინალი"
 }
 
 
