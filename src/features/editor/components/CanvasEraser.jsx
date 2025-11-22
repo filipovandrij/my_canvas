@@ -1,6 +1,6 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
-import { drawImageContain, loadImage } from '../modules/canvas/images.js'
-import { stampShape, stampLine, strokeShapeOutline } from '../modules/canvas/brushes.js'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { drawImageContain, loadImage } from '../lib/images.js'
+import { stampShape, stampLine, strokeShapeOutline } from '../lib/brushes.js'
 
 const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
   const { imageSrc, brushSize, brushShape, zoom = 1, onZoomChange } = props
@@ -13,6 +13,40 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
   const isErasingRef = useRef(false)
   const lastPointRef = useRef(null)
   const hasDrawnImageRef = useRef(false)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const isPanningRef = useRef(false)
+  const panStartRef = useRef({ x: 0, y: 0 })
+  const panAtStartRef = useRef({ x: 0, y: 0 })
+
+  // Overlay helpers defined early to satisfy no-use-before-define
+  function clearOverlay() {
+    const overlay = overlayRef.current
+    const octx = overlayCtxRef.current
+    if (!overlay || !octx) return
+    octx.clearRect(0, 0, overlay.width, overlay.height)
+  }
+
+  function drawPreview(x, y) {
+    const octx = overlayCtxRef.current
+    const overlay = overlayRef.current
+    if (!octx || !overlay) return
+    // Clear previous
+    octx.clearRect(0, 0, overlay.width, overlay.height)
+    // Dual stroke for visibility on any background
+    octx.save()
+    octx.setLineDash([4, 3])
+    octx.lineJoin = 'round'
+    octx.lineCap = 'round'
+    // Outer dark stroke
+    octx.strokeStyle = 'rgba(0,0,0,0.85)'
+    octx.lineWidth = 2
+    strokeShapeOutline(octx, x, y, brushSize, brushShape)
+    // Inner light stroke
+    octx.strokeStyle = 'rgba(255,255,255,0.95)'
+    octx.lineWidth = 1
+    strokeShapeOutline(octx, x, y, brushSize, brushShape)
+    octx.restore()
+  }
 
   // Initialize canvas context
   useEffect(() => {
@@ -44,7 +78,6 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
       drawImageContain(ctx, imageRef.current, canvas)
       hasDrawnImageRef.current = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Load and draw image when imageSrc changes
@@ -81,6 +114,8 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
       drawImageContain(ctx, img, canvas)
       hasDrawnImageRef.current = true
       clearOverlay()
+      // reset pan on new image
+      setPan({ x: 0, y: 0 })
     }
     run()
     return () => {
@@ -107,38 +142,15 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
     }
   }
 
-  function clearOverlay() {
-    const overlay = overlayRef.current
-    const octx = overlayCtxRef.current
-    if (!overlay || !octx) return
-    octx.clearRect(0, 0, overlay.width, overlay.height)
-  }
 
-  function drawPreview(x, y) {
-    const octx = overlayCtxRef.current
-    const overlay = overlayRef.current
-    if (!octx || !overlay) return
-    // Clear previous
-    octx.clearRect(0, 0, overlay.width, overlay.height)
-    // Dual stroke for visibility on any background
-    octx.save()
-    octx.setLineDash([4, 3])
-    octx.lineJoin = 'round'
-    octx.lineCap = 'round'
-    // Outer dark stroke
-    octx.strokeStyle = 'rgba(0,0,0,0.85)'
-    octx.lineWidth = 2
-    strokeShapeOutline(octx, x, y, brushSize, brushShape)
-    // Inner light stroke
-    octx.strokeStyle = 'rgba(255,255,255,0.95)'
-    octx.lineWidth = 1
-    strokeShapeOutline(octx, x, y, brushSize, brushShape)
-    octx.restore()
-  }
 
   function beginErase(e) {
     if (!imageRef.current) return
     e.preventDefault()
+    // ignore right/middle click for erase
+    if (typeof e.button === 'number' && e.button !== 0) {
+      return
+    }
     const ctx = ctxRef.current
     const pos = getOffsetPos(e)
     isErasingRef.current = true
@@ -178,22 +190,57 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
     },
   }))
 
-  function onWheelZoom(e) {
-    if (!onZoomChange) return
-    // Zoom only when Ctrl/Cmd pressed to avoid hijacking normal scroll
-    if (!e.ctrlKey && !e.metaKey) return
+  // Wheel zoom with passive: false to prevent browser/page zoom/scroll
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el || !onZoomChange) return
+    const onWheel = (e) => {
+      e.preventDefault()
+      const direction = e.deltaY > 0 ? -1 : 1
+      const factor = direction > 0 ? 1.1 : 1 / 1.1
+      const next = Math.max(0.25, Math.min(8, zoom * factor))
+      onZoomChange(next)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      el.removeEventListener('wheel', onWheel)
+    }
+  }, [zoom, onZoomChange])
+
+  function beginPan(e) {
+    if (!imageRef.current) return
+    if (e.button !== 2) return
     e.preventDefault()
-    const direction = e.deltaY > 0 ? -1 : 1
-    const factor = direction > 0 ? 1.1 : 1 / 1.1
-    const next = Math.max(0.25, Math.min(8, zoom * factor))
-    onZoomChange(next)
+    isPanningRef.current = true
+    panStartRef.current = { x: e.clientX, y: e.clientY }
+    panAtStartRef.current = { x: pan.x, y: pan.y }
+  }
+
+  function movePan(e) {
+    if (!isPanningRef.current) return
+    e.preventDefault()
+    const dx = e.clientX - panStartRef.current.x
+    const dy = e.clientY - panStartRef.current.y
+    setPan({ x: panAtStartRef.current.x + dx, y: panAtStartRef.current.y + dy })
+  }
+
+  function endPan() {
+    isPanningRef.current = false
   }
 
   return (
-    <div ref={wrapperRef} className="canvas-area" onWheel={onWheelZoom}>
+    <div
+      ref={wrapperRef}
+      className="canvas-area"
+      onContextMenu={(e) => e.preventDefault()}
+      onMouseDown={beginPan}
+      onMouseMove={movePan}
+      onMouseUp={endPan}
+      onMouseLeave={endPan}
+    >
       <div
         className="canvas-stack"
-        style={{ transform: `scale(${zoom})` }}
+        style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
       >
         <canvas
           ref={canvasRef}
@@ -220,5 +267,6 @@ const CanvasEraser = forwardRef(function CanvasEraser(props, ref) {
 })
 
 export default CanvasEraser
+
 
 

@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback } from 'react'
-import CanvasEraser from '../components/CanvasEraser.jsx'
-import Toolbar from '../components/Toolbar.jsx'
+import CanvasEraser from '../features/editor/components/CanvasEraser.jsx'
+import Toolbar from '../features/editor/components/Toolbar.jsx'
+import { useTranslation } from 'react-i18next'
 
 function EditorPage() {
   const canvasRef = useRef(null)
@@ -8,6 +9,7 @@ function EditorPage() {
   const [brushSize, setBrushSize] = useState(40)
   const [brushShape, setBrushShape] = useState('circle') // 'circle' | 'square' | 'triangle'
   const [zoom, setZoom] = useState(1) // 0.25 - 4
+  const { t } = useTranslation()
 
   const handleUpload = useCallback((file) => {
     if (!file) return
@@ -31,31 +33,35 @@ function EditorPage() {
 
   return (
     <div className="page">
-      <Toolbar
-        brushSize={brushSize}
-        onBrushSizeChange={setBrushSize}
-        brushShape={brushShape}
-        onBrushShapeChange={setBrushShape}
-        zoom={zoom}
-        onZoomChange={setZoom}
-        onUpload={handleUpload}
-        onDownload={handleDownload}
-        hasImage={Boolean(imageSrc)}
-      />
-      <div className="canvas-wrap">
-        <CanvasEraser
-          ref={canvasRef}
-          imageSrc={imageSrc}
-          brushSize={brushSize}
-          brushShape={brushShape}
-          zoom={zoom}
-          onZoomChange={setZoom}
-        />
-        {!imageSrc && (
-          <div className="empty-hint">
-            Загрузите изображение, чтобы начать редактирование
-          </div>
-        )}
+      <div className="editor">
+        <aside className="sidebar">
+          <Toolbar
+            brushSize={brushSize}
+            onBrushSizeChange={setBrushSize}
+            brushShape={brushShape}
+            onBrushShapeChange={setBrushShape}
+            zoom={zoom}
+            onZoomChange={setZoom}
+            onUpload={handleUpload}
+            onDownload={handleDownload}
+            hasImage={Boolean(imageSrc)}
+          />
+        </aside>
+        <div className="canvas-wrap">
+          <CanvasEraser
+            ref={canvasRef}
+            imageSrc={imageSrc}
+            brushSize={brushSize}
+            brushShape={brushShape}
+            zoom={zoom}
+            onZoomChange={setZoom}
+          />
+          {!imageSrc && (
+            <div className="empty-hint">
+              {t('emptyHint')}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

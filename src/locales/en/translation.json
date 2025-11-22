@@ -1,0 +1,14 @@
+{
+  "upload": "Upload",
+  "download": "Download",
+  "size": "Size",
+  "shape": "Shape",
+  "zoom": "Zoom",
+  "shape_circle": "Circle",
+  "shape_square": "Square",
+  "shape_triangle": "Triangle",
+  "emptyHint": "Upload an image to start editing",
+  "language": "Language"
+}
+
+
