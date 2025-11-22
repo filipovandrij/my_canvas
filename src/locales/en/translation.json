@@ -11,7 +11,11 @@
   "language": "Language",
   "undo": "Undo",
   "redo": "Redo",
-  "showOriginal": "Show original"
+  "showOriginal": "Show original",
+  "tab_pixelEraser": "Pixel Eraser",
+  "tab_photoCollage": "Photo Collage",
+  "collageHint": "Assemble multiple photos into a collage",
+  "collagePlaceholder": "Photo Collage — coming soon"
 }
 
 

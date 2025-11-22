@@ -4,6 +4,7 @@ import Toolbar from '../features/editor/components/Toolbar.jsx'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { setBrushSize, setBrushShape, setZoom, setImageSrc, setHistory, setShowOriginal } from '../store/editorSlice.js'
+import SidebarTabs from '../components/SidebarTabs.jsx'
 
 function EditorPage() {
   const canvasRef = useRef(null)
@@ -40,6 +41,7 @@ function EditorPage() {
     <div className="page">
       <div className="editor">
         <aside className="sidebar">
+          <SidebarTabs />
           <Toolbar
             brushSize={brushSize}
             onBrushSizeChange={(v) => dispatch(setBrushSize(v))}

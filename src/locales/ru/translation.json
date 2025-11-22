@@ -11,7 +11,11 @@
   "language": "Язык",
   "undo": "Отменить",
   "redo": "Повторить",
-  "showOriginal": "Показать оригинал"
+  "showOriginal": "Показать оригинал",
+  "tab_pixelEraser": "Пиксель-ластик",
+  "tab_photoCollage": "Сборщик фото",
+  "collageHint": "Соберите несколько фото в коллаж",
+  "collagePlaceholder": "Сборщик фото — скоро"
 }
 
 

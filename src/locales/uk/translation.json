@@ -11,7 +11,11 @@
   "language": "Мова",
   "undo": "Скасувати",
   "redo": "Повторити",
-  "showOriginal": "Показати оригінал"
+  "showOriginal": "Показати оригінал",
+  "tab_pixelEraser": "Піксель-ластик",
+  "tab_photoCollage": "Колаж з фото",
+  "collageHint": "Зберіть кілька фото в колаж",
+  "collagePlaceholder": "Колаж з фото — скоро"
 }
 
 

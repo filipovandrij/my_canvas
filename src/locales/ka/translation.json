@@ -11,7 +11,11 @@
   "language": "ენა",
   "undo": "გაუქმება",
   "redo": "გამეორება",
-  "showOriginal": "აჩვენე ორიგინალი"
+  "showOriginal": "აჩვენე ორიგინალი",
+  "tab_pixelEraser": "პიქსელური საშლელი",
+  "tab_photoCollage": "ფოტო კოლაჟი",
+  "collageHint": "რამდენიმე ფოტოს კოლაჟად შეკრება",
+  "collagePlaceholder": "ფოტო კოლაჟი — მალე"
 }
 
 
